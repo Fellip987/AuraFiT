@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuraFit - Relatório e Evolução Corporal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <!-- Gerador de PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    .glass-card {
+      background: rgba(30, 41, 59, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .gradient-bg {
+      background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #020617 !important; color: #f8fafc !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans pb-16">
+
+  <!-- Header / Navbar -->
+  <header class="border-b border-slate-800 bg-slate-900/80 sticky top-0 z-50 backdrop-blur-md no-print">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center font-black text-xl text-white shadow-lg shadow-indigo-500/30">
+          ⚡
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-wide">Aura<span class="gradient-text">Fit</span></h1>
+          <p class="text-xs text-slate-400">Sistema de Avaliação & Performance Corporal</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 border border-slate-700 transition-all">
+          <i class="fa-solid fa-print"></i> Imprimir
+        </button>
+        <button onclick="exportToPDF()" id="btnExport" class="gradient-bg hover:opacity-90 text-white font-bold px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-indigo-500/25 transition-all">
+          <i class="fa-solid fa-file-pdf text-sm"></i> Exportar Relatório PDF
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 mt-8 space-y-8">
+
+    <!-- Conteúdo Exportável -->
+    <div id="pdfContent" class="space-y-8 p-2 rounded-3xl">
+      
+      <!-- Cabeçalho Institucional do Relatório -->
+      <div class="glass-card rounded-3xl p-6 shadow-2xl border border-indigo-500/20 space-y-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
+          <div>
+            <span class="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-1">AuraFit Performance Analytics</span>
+            <h2 class="text-2xl font-extrabold text-white">Relatório de Avaliação Física & Evolução</h2>
+            <p class="text-xs text-slate-400 mt-1" id="pdfGeneratedDate">Gerado em: --</p>
+          </div>
+          <div class="bg-slate-900/90 border border-slate-800 px-4 py-2.5 rounded-2xl flex items-center gap-3">
+            <i class="fa-solid fa-user-shield text-indigo-400 text-xl"></i>
+            <div>
+              <span class="text-[10px] text-slate-400 uppercase block">Status da Avaliação</span>
+              <span class="text-xs font-bold text-emerald-400">Plano Ativo / Em Acompanhamento</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dados do Atleta e Profissional -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nome do Atleta / Cliente</label>
+            <input type="text" id="athleteName" value="Felipe Benzs" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Treinador / Nutricionista</label>
+            <input type="text" id="coachName" value="Equipe AuraFit" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Foco Principal</label>
+            <input type="text" id="primaryFocus" value="Recomposição & Ganho de Massa" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 outline-none focus:border-indigo-500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Comparativo Visual (Antes vs Depois) -->
+      <section class="glass-card rounded-3xl p-6 shadow-2xl space-y-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800 pb-4">
+          <div>
+            <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+              <i class="fa-solid fa-images text-indigo-400"></i> Registro Fotográfico de Progresso
+            </h3>
+            <p class="text-xs text-slate-400">Comparação postural e definição muscular</p>
+          </div>
+
+          <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-800 self-stretch sm:self-auto no-print">
+            <button id="btnModeSide" onclick="setCompareMode('side')" class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition-all">
+              <i class="fa-solid fa-table-columns"></i> Lado a Lado
+            </button>
+            <button id="btnModeSlider" onclick="setCompareMode('slider')" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all">
+              <i class="fa-solid fa-arrows-left-right"></i> Slider Interativo
+            </button>
+          </div>
+        </div>
+
+        <!-- Uploads (Ocultos no PDF) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 no-print">
+          <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold text-rose-400 uppercase tracking-wider">Foto Inicial (Antes)</span>
+              <input type="date" id="dateBefore" value="2026-01-01" onchange="updatePDFDates()" class="bg-slate-950 text-xs text-slate-300 border border-slate-800 rounded-lg px-2 py-1 outline-none">
+            </div>
+            <input type="file" id="fileBefore" accept="image/*" class="block w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rose-500/10 file:text-rose-400 hover:file:bg-rose-500/20 cursor-pointer" onchange="loadPhoto(event, 'before')">
+            <div class="flex gap-2 items-center pt-2">
+              <span class="text-xs text-slate-400">Peso Inicial:</span>
+              <input type="number" id="weightBefore" value="82" oninput="updateStats()" class="w-20 bg-slate-950 border border-slate-800 rounded-lg text-xs p-1.5 text-center outline-none">
+              <span class="text-xs text-slate-400">kg</span>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Foto Atual (Depois)</span>
+              <input type="date" id="dateAfter" value="2026-04-01" onchange="updatePDFDates()" class="bg-slate-950 text-xs text-slate-300 border border-slate-800 rounded-lg px-2 py-1 outline-none">
+            </div>
+            <input type="file" id="fileAfter" accept="image/*" class="block w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20 cursor-pointer" onchange="loadPhoto(event, 'after')">
+            <div class="flex gap-2 items-center pt-2">
+              <span class="text-xs text-slate-400">Peso Atual:</span>
+              <input type="number" id="weightAfter" value="75" oninput="updateStats()" class="w-20 bg-slate-950 border border-slate-800 rounded-lg text-xs p-1.5 text-center outline-none">
+              <span class="text-xs text-slate-400">kg</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Painel Lado a Lado -->
+        <div id="viewSide" class="grid grid-cols-2 gap-4 h-80 md:h-96">
+          <div class="bg-slate-950 rounded-2xl overflow-hidden relative border border-slate-800 flex items-center justify-center">
+            <img id="sideImgBefore" class="w-full h-full object-cover hidden">
+            <span id="lblSideBeforeEmpty" class="text-xs text-slate-600">Sem Foto ANTES</span>
+            <div class="absolute bottom-3 left-3 bg-rose-950/90 text-rose-300 border border-rose-800 text-[10px] font-bold px-2.5 py-1 rounded-md backdrop-blur-md">
+              ANTES (<span id="lblDateBefore">01/01/2026</span>)
+            </div>
+          </div>
+
+          <div class="bg-slate-950 rounded-2xl overflow-hidden relative border border-slate-800 flex items-center justify-center">
+            <img id="sideImgAfter" class="w-full h-full object-cover hidden">
+            <span id="lblSideAfterEmpty" class="text-xs text-slate-600">Sem Foto DEPOIS</span>
+            <div class="absolute bottom-3 left-3 bg-emerald-950/90 text-emerald-300 border border-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-md backdrop-blur-md">
+              DEPOIS (<span id="lblDateAfter">01/04/2026</span>)
+            </div>
+          </div>
+        </div>
+
+        <!-- Painel Slider Interativo -->
+        <div id="viewSlider" class="hidden relative w-full h-80 md:h-96 rounded-2xl overflow-hidden select-none border border-slate-700">
+          <div class="absolute inset-0 bg-slate-950 flex items-center justify-center text-slate-600">
+            <img id="sliderImgAfter" class="w-full h-full object-cover hidden">
+            <span id="lblAfterEmpty" class="text-xs">Aguardando Foto DEPOIS</span>
+          </div>
+
+          <div id="sliderWrapper" class="absolute top-0 left-0 bottom-0 w-1/2 overflow-hidden bg-slate-900 flex items-center justify-center text-slate-600 border-r-2 border-indigo-500 shadow-2xl z-10">
+            <img id="sliderImgBefore" class="absolute top-0 left-0 w-full h-full object-cover hidden" style="max-width: none;">
+            <span id="lblBeforeEmpty" class="text-xs">Aguardando Foto ANTES</span>
+          </div>
+
+          <input type="range" min="0" max="100" value="50" id="sliderRange" oninput="handleSlider(this.value)" class="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-30">
+        </div>
+
+        <!-- Métricas Rápidas -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-900/90 p-4 rounded-2xl border border-slate-800 text-center">
+          <div>
+            <span class="text-[10px] text-slate-400 uppercase font-bold block">Variação de Peso</span>
+            <span id="statWeightDiff" class="text-lg font-black text-emerald-400">-7.0 kg</span>
+          </div>
+          <div>
+            <span class="text-[10px] text-slate-400 uppercase font-bold block">IMC Atual</span>
+            <span id="statIMC" class="text-lg font-black text-indigo-400">23.7 (Normal)</span>
+          </div>
+          <div>
+            <span class="text-[10px] text-slate-400 uppercase font-bold block">Gasto Basal (TMB)</span>
+            <span id="statBMR" class="text-lg font-black text-cyan-400">1725 kcal</span>
+          </div>
+          <div>
+            <span class="text-[10px] text-slate-400 uppercase font-bold block">Meta Atual</span>
+            <span id="statGoalLabel" class="text-sm font-bold text-purple-400">Definição / Cut</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Antropometria & Medidas Corporais -->
+      <section class="glass-card rounded-3xl p-6 shadow-2xl space-y-4">
+        <h3 class="font-bold text-slate-200 text-lg border-b border-slate-800 pb-3 flex items-center gap-2">
+          <i class="fa-solid fa-ruler-combined text-indigo-400"></i> Histórico Antropométrico (Circunferências)
+        </h3>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left text-slate-300">
+            <thead class="text-[10px] uppercase bg-slate-900/80 text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="py-3 px-4">Medida (cm)</th>
+                <th class="py-3 px-4">Inicial (Antes)</th>
+                <th class="py-3 px-4">Atual (Depois)</th>
+                <th class="py-3 px-4">Diferença</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/50">
+              <tr>
+                <td class="py-2.5 px-4 font-semibold text-slate-200">Gordura Corporal (% BF)</td>
+                <td class="py-2.5 px-4"><input type="number" id="bfBefore" value="22" oninput="calculateAnthropometry()" class="w-16 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-center"> %</td>
+                <td class="py-2.5 px-4"><input type="number" id="bfAfter" value="15" oninput="calculateAnthropometry()" class="w-16 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-center"> %</td>
+                <td class="py-2.5 px-4 font-bold text-emerald-400" id="diffBF">-7.0 %</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-4 font-semibold text-slate-200">Cintura (Umbilical)</td>
+                <td class="py-2.5 px-4"><input type="number" id="waistBefore" value="88" oninput="calculateAnthropometry()" class="w-16 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-center"> cm</td>
+                <td class="py-2.5 px-4"><input type="number" id="waistAfter" value="80" oninput="calculateAnthropometry()" class="w-16 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-center"> cm</td>
+                <td class="py-2.5 px-4 font-bold text-emerald-400" id="diffWaist">-8.0 cm</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-4 font-semibold text-slate-200">Braço Relaxado</td>
+                <td class="py-2.5 px-4"><input type="number" id="armBefore" value="36" oninput="calculateAnthropometry()" class="w-16 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-center"> cm</td>
+                <td class="py-2.5 px-4"><input type="number" id="armAfter" value="38" oninput="calculateAnthropometry()" class="w-16 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-center"> cm</td>
+                <td class="py-2.5 px-4 font-bold text-indigo-400" id="diffArm">+2.0 cm</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-4 font-semibold text-slate-200">Coxa Médio</td>
+                <td class="py-2.5 px-4"><input type="number" id="thighBefore" value="58" oninput="calculateAnthropometry()" class="w-16 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-center"> cm</td>
+                <td class="py-2.5 px-4"><input type="number" id="thighAfter" value="60" oninput="calculateAnthropometry()" class="w-16 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-center"> cm</td>
+                <td class="py-2.5 px-4 font-bold text-indigo-400" id="diffThigh">+2.0 cm</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Calculadora & Prescrição -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <div class="lg:col-span-5 glass-card rounded-3xl p-6 shadow-2xl space-y-4">
+          <h3 class="font-bold text-slate-200 text-lg border-b border-slate-800 pb-3 flex items-center gap-2">
+            <i class="fa-solid fa-sliders text-indigo-400"></i> Parâmetros de Métricas
+          </h3>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Gênero</label>
+              <select id="gender" onchange="calculatePlan()" class="w-full bg-slate-900 border border-slate-700/60 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none">
+                <option value="male">Masculino</option>
+                <option value="female">Feminino</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Idade</label>
+              <input type="number" id="age" value="25" oninput="calculatePlan()" class="w-full bg-slate-900 border border-slate-700/60 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Peso Meta (kg)</label>
+              <input type="number" id="weight" value="75" oninput="calculatePlan()" class="w-full bg-slate-900 border border-slate-700/60 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Altura (cm)</label>
+              <input type="number" id="height" value="178" oninput="calculatePlan()" class="w-full bg-slate-900 border border-slate-700/60 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Atividade Física</label>
+            <select id="activity" onchange="calculatePlan()" class="w-full bg-slate-900 border border-slate-700/60 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none">
+              <option value="1.2">Sedentário</option>
+              <option value="1.375">Leve (1-3x/sem)</option>
+              <option value="1.55" selected>Moderado (3-5x/sem)</option>
+              <option value="1.725">Intenso (6-7x/sem)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Objetivo Corporal</label>
+            <select id="goal" onchange="calculatePlan()" class="w-full bg-slate-900 border border-slate-700/60 rounded-xl p-3 text-sm focus:border-indigo-500 outline-none">
+              <option value="cut" selected>Emagrecimento & Definição</option>
+              <option value="recomp">Recomposição Corporal</option>
+              <option value="bulk">Ganho de Massa Muscular</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="lg:col-span-7 glass-card rounded-3xl p-6 shadow-2xl space-y-6">
+          <h3 class="font-bold text-slate-200 text-lg flex items-center gap-2">
+            <i class="fa-solid fa-utensils text-indigo-400"></i> Meta Macronutricional Sugerida
+          </h3>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 text-center">
+              <span class="block text-xs text-slate-400">Calorias</span>
+              <span id="resCalories" class="text-2xl font-black text-white">--</span>
+              <span class="text-[10px] text-slate-500 block">kcal/dia</span>
+            </div>
+
+            <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 text-center">
+              <span class="block text-xs text-slate-400">Proteínas</span>
+              <span id="resProtein" class="text-2xl font-black text-emerald-400">--</span>
+              <span class="text-[10px] text-slate-500 block">g/dia</span>
+            </div>
+
+            <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 text-center">
+              <span class="block text-xs text-slate-400">Carbos</span>
+              <span id="resCarbs" class="text-2xl font-black text-indigo-400">--</span>
+              <span class="text-[10px] text-slate-500 block">g/dia</span>
+            </div>
+
+            <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 text-center">
+              <span class="block text-xs text-slate-400">Gorduras</span>
+              <span id="resFats" class="text-2xl font-black text-rose-400">--</span>
+              <span class="text-[10px] text-slate-500 block">g/dia</span>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-cyan-950/30 border border-cyan-800/40 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+              <i class="fa-solid fa-glass-water text-cyan-400 text-xl"></i>
+              <div>
+                <p class="text-sm font-semibold text-cyan-200">Meta Hidratação</p>
+                <p class="text-xs text-cyan-400/80">Recomendação diária</p>
+              </div>
+            </div>
+            <span id="resWater" class="text-2xl font-black text-cyan-300">-- L</span>
+          </div>
+
+          <div class="space-y-3">
+            <h4 class="font-bold text-slate-300 text-sm flex items-center gap-2">
+              <i class="fa-solid fa-dumbbell text-indigo-400"></i> Protocolo de Treinos Prescrito
+            </h4>
+            <div id="workoutPlan" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Anotações e Orientações do Treinador -->
+      <section class="glass-card rounded-3xl p-6 shadow-2xl space-y-3">
+        <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2">
+          <i class="fa-solid fa-clipboard-list text-indigo-400"></i> Observações & Orientações Específicas
+        </h3>
+        <textarea id="trainerNotes" rows="3" placeholder="Insira aqui observações personalizadas sobre a rotina, suplementação ou feedback do período..." class="w-full bg-slate-900/80 border border-slate-800 rounded-2xl p-4 text-xs text-slate-300 focus:border-indigo-500 outline-none resize-none">Excelente evolução na densidade muscular do tronco e redução na linha de cintura. Manter ingestão hídrica alta e progressão de carga no treino de membros inferiores.</textarea>
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('pdfGeneratedDate').innerText = 'Gerado em: ' + new Date().toLocaleDateString('pt-BR');
+
+    function updatePDFDates() {
+      const dBefore = document.getElementById('dateBefore').value;
+      const dAfter = document.getElementById('dateAfter').value;
+      
+      if (dBefore) {
+        const [y, m, d] = dBefore.split('-');
+        document.getElementById('lblDateBefore').innerText = `${d}/${m}/${y}`;
+      }
+      if (dAfter) {
+        const [y, m, d] = dAfter.split('-');
+        document.getElementById('lblDateAfter').innerText = `${d}/${m}/${y}`;
+      }
+    }
+
+    function exportToPDF() {
+      const btn = document.getElementById('btnExport');
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch animate-spin"></i> Gerando PDF...';
+      btn.disabled = true;
+
+      setCompareMode('side');
+
+      const element = document.getElementById('pdfContent');
+      const athleteName = document.getElementById('athleteName').value || 'Atleta';
+      
+      const opt = {
+        margin:       [8, 8, 8, 8],
+        filename:     `AuraFit_Relatorio_${athleteName.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save().then(() => {
+        btn.innerHTML = '<i class="fa-solid fa-file-pdf text-sm"></i> Exportar Relatório PDF';
+        btn.disabled = false;
+      }).catch(err => {
+        console.error(err);
+        alert('Erro ao gerar o PDF.');
+        btn.innerHTML = '<i class="fa-solid fa-file-pdf text-sm"></i> Exportar Relatório PDF';
+        btn.disabled = false;
+      });
+    }
+
+    function setCompareMode(mode) {
+      const btnSlider = document.getElementById('btnModeSlider');
+      const btnSide = document.getElementById('btnModeSide');
+      const viewSlider = document.getElementById('viewSlider');
+      const viewSide = document.getElementById('viewSide');
+
+      if (mode === 'slider') {
+        btnSlider.className = "px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition-all";
+        btnSide.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all";
+        viewSlider.classList.remove('hidden');
+        viewSide.classList.add('hidden');
+      } else {
+        btnSide.className = "px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition-all";
+        btnSlider.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all";
+        viewSide.classList.remove('hidden');
+        viewSlider.classList.add('hidden');
+      }
+    }
+
+    function loadPhoto(event, target) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const url = e.target.result;
+
+        if (target === 'before') {
+          document.getElementById('sliderImgBefore').src = url;
+          document.getElementById('sliderImgBefore').classList.remove('hidden');
+          document.getElementById('lblBeforeEmpty').classList.add('hidden');
+
+          document.getElementById('sideImgBefore').src = url;
+          document.getElementById('sideImgBefore').classList.remove('hidden');
+          document.getElementById('lblSideBeforeEmpty').classList.add('hidden');
+        } else {
+          document.getElementById('sliderImgAfter').src = url;
+          document.getElementById('sliderImgAfter').classList.remove('hidden');
+          document.getElementById('lblAfterEmpty').classList.add('hidden');
+
+          document.getElementById('sideImgAfter').src = url;
+          document.getElementById('sideImgAfter').classList.remove('hidden');
+          document.getElementById('lblSideAfterEmpty').classList.add('hidden');
+        }
+        syncSliderWidth();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleSlider(val) {
+      const wrapper = document.getElementById('sliderWrapper');
+      wrapper.style.width = val + '%';
+      syncSliderWidth();
+    }
+
+    function syncSliderWidth() {
+      const container = document.getElementById('viewSlider');
+      const imgBefore = document.getElementById('sliderImgBefore');
+      if (container && imgBefore) {
+        imgBefore.style.width = container.offsetWidth + 'px';
+      }
+    }
+
+    window.addEventListener('resize', syncSliderWidth);
+
+    function updateStats() {
+      const wb = parseFloat(document.getElementById('weightBefore').value) || 0;
+      const wa = parseFloat(document.getElementById('weightAfter').value) || 0;
+      const height = (parseFloat(document.getElementById('height').value) || 178) / 100;
+      
+      const diff = wa - wb;
+      const diffElem = document.getElementById('statWeightDiff');
+      if (diff < 0) {
+        diffElem.innerText = `${diff.toFixed(1)} kg`;
+        diffElem.className = "text-lg font-black text-emerald-400";
+      } else if (diff > 0) {
+        diffElem.innerText = `+${diff.toFixed(1)} kg`;
+        diffElem.className = "text-lg font-black text-indigo-400";
+      } else {
+        diffElem.innerText = `0.0 kg`;
+        diffElem.className = "text-lg font-black text-slate-400";
+      }
+
+      if (height > 0 && wa > 0) {
+        const imc = wa / (height * height);
+        let category = "Normal";
+        if (imc < 18.5) category = "Abaixo";
+        else if (imc >= 25 && imc < 30) category = "Sobrepeso";
+        else if (imc >= 30) category = "Obesidade";
+
+        document.getElementById('statIMC').innerText = `${imc.toFixed(1)} (${category})`;
+      }
+    }
+
+    function calculateAnthropometry() {
+      const calcDiff = (idBefore, idAfter, idResult, unit = 'cm', reverseColors = false) => {
+        const vBefore = parseFloat(document.getElementById(idBefore).value) || 0;
+        const vAfter = parseFloat(document.getElementById(idAfter).value) || 0;
+        const diff = vAfter - vBefore;
+        const elem = document.getElementById(idResult);
+
+        if (diff < 0) {
+          elem.innerText = `${diff.toFixed(1)} ${unit}`;
+          elem.className = reverseColors ? "py-2.5 px-4 font-bold text-indigo-400" : "py-2.5 px-4 font-bold text-emerald-400";
+        } else if (diff > 0) {
+          elem.innerText = `+${diff.toFixed(1)} ${unit}`;
+          elem.className = reverseColors ? "py-2.5 px-4 font-bold text-emerald-400" : "py-2.5 px-4 font-bold text-indigo-400";
+        } else {
+          elem.innerText = `0.0 ${unit}`;
+          elem.className = "py-2.5 px-4 font-bold text-slate-400";
+        }
+      };
+
+      calcDiff('bfBefore', 'bfAfter', 'diffBF', '%');
+      calcDiff('waistBefore', 'waistAfter', 'diffWaist', 'cm');
+      calcDiff('armBefore', 'armAfter', 'diffArm', 'cm', true);
+      calcDiff('thighBefore', 'thighAfter', 'diffThigh', 'cm', true);
+    }
+
+    function calculatePlan() {
+      const gender = document.getElementById('gender').value;
+      const age = parseFloat(document.getElementById('age').value) || 25;
+      const weight = parseFloat(document.getElementById('weight').value) || 75;
+      const height = parseFloat(document.getElementById('height').value) || 178;
+      const activity = parseFloat(document.getElementById('activity').value) || 1.55;
+      const goal = document.getElementById('goal').value;
+
+      let bmr = (10 * weight) + (6.25 * height) - (5 * age);
+      bmr += (gender === 'male') ? 5 : -161;
+
+      document.getElementById('statBMR').innerText = `${Math.round(bmr)} kcal`;
+
+      let tdee = bmr * activity;
+      let targetCalories = tdee;
+
+      if (goal === 'cut') targetCalories -= 450;
+      else if (goal === 'bulk') targetCalories += 380;
+
+      const proteinGrams = Math.round(weight * (goal === 'cut' ? 2.3 : 2.0));
+      const fatGrams = Math.round(weight * 0.9);
+      const remainingCalories = targetCalories - (proteinGrams * 4 + fatGrams * 9);
+      const carbGrams = Math.max(0, Math.round(remainingCalories / 4));
+      const waterLitres = (weight * 0.038).toFixed(1);
+
+      document.getElementById('resCalories').innerText = Math.round(targetCalories);
+      document.getElementById('resProtein').innerText = proteinGrams;
+      document.getElementById('resCarbs').innerText = carbGrams;
+      document.getElementById('resFats').innerText = fatGrams;
+      document.getElementById('resWater').innerText = waterLitres + ' L';
+
+      const goalLabel = document.getElementById('statGoalLabel');
+      const workoutDiv = document.getElementById('workoutPlan');
+
+      if (goal === 'bulk') {
+        goalLabel.innerText = "Hipertrofia / Bulk";
+        workoutDiv.innerHTML = `
+          <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-xs">
+            <span class="font-bold text-indigo-400 block mb-0.5">Push/Pull/Legs (Hipertrofia)</span>
+            Sobrecarga progressiva focada em exercícios compostos multiarticulares (6-10 repetições).
+          </div>
+        `;
+      } else if (goal === 'cut') {
+        goalLabel.innerText = "Definição / Cut";
+        workoutDiv.innerHTML = `
+          <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-xs">
+            <span class="font-bold text-rose-400 block mb-0.5">Upper/Lower + Cardio LISS</span>
+            Treino resistido pesado para retenção de massa magra + 30 min de cardio contínuo diário.
+          </div>
+        `;
+      } else {
+        goalLabel.innerText = "Recomposição";
+        workoutDiv.innerHTML = `
+          <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-xs">
+            <span class="font-bold text-emerald-400 block mb-0.5">Divisão ABC (Volume Moderado)</span>
+            4 a 5 treinos semanais balanceando estímulo tensional e metabólico.
+          </div>
+        `;
+      }
+
+      updateStats();
+    }
+
+    calculatePlan();
+    calculateAnthropometry();
+    updatePDFDates();
+  </script>
+</body>
+</html>
